@@ -164,7 +164,7 @@ use constant DEPENDENT  => 4;
 
 our @EXPORT = qw(OK WARNING CRITICAL UNKNOWN DEPENDENT);
 
-our $VERSION = '1.1';
+our $VERSION = '1.2';
 
 our $SNMP_USAGE = <<EOF;
        --hostname|-H HOST --port|-p INT --snmp-version 1|2c|3 \\
