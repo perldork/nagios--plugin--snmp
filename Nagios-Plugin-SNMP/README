@@ -1,4 +1,4 @@
-Nagios-Plugin-SNMP version 1.0
+Nagios-Plugin-SNMP version 1.1
 ===============================
 
 This module extends Nagios::Plugin with methods to help developers
@@ -19,6 +19,9 @@ to include parsing and setting of these options:
 * --auth-username: Auth username for SNMP v3
 * --auth-password: Auth password for SNMP v3
 * --auth-protocol: Auth protocol for SNMP v3 (defaults to md5)
+
+This version supports delta processing and clustered queries 
+(see perldoc for more information).
 
 The module uses Net::SNMP for SNMP transport, so it works with
 SNMP version 1, 2c, and 3.

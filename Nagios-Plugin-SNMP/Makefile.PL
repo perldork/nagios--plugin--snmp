@@ -6,9 +6,9 @@ WriteMakefile(
     NAME              => 'Nagios::Plugin::SNMP',
     VERSION_FROM      => 'lib/Nagios/Plugin/SNMP.pm',
     PREREQ_PM         => {
-        'Exporter' => '1.0',
-        'Net::SNMP' => '1.0',
-        'Nagios::Plugin' => '1.0'
+        'Exporter' => '0',
+        'Net::SNMP' => '0',
+        'Nagios::Plugin' => '0'
     },
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Nagios/Plugin/SNMP.pm', # retrieve abstract from module
