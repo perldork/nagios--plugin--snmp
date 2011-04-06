@@ -29,6 +29,7 @@ Nagios::Plugin::SNMP - Helper module to make writing SNMP-based plugins for Nagi
  * --auth-username: Auth username for SNMP v3
  * --auth-password: Auth password for SNMP v3
  * --auth-protocol: Auth protocol for SNMP v3 (defaults to md5)
+ * --snmp-privacy: Encrypt the whole conversation for SNMP v3, using same password as --auth-password
  * Connect to an SNMP device
  * Perform a get() or walk() request, each method does 'the right
    thing' based on the version of SNMP selected by the user.
@@ -176,7 +177,7 @@ our $SNMP_USAGE = <<EOF;
        [--alt-host HOST_1 ... --alt-host HOST_N] \\
        { 
            [--rocommunity S] | \\
-           [--auth-username S --auth-password S [--auth-protocol S]] 
+           [--auth-username S --auth-password S [--auth-protocol S] [--snmp-privacy]] 
        }
 EOF
 
@@ -320,6 +321,14 @@ sub _snmp_add_options {
                   "   Auth protocol: SNMP 3 only [default md5]",
         'required' => 0,
         'default' => 'md5'
+    );
+
+    $self->add_arg(
+        'spec' => 'snmp-privacy',
+        'help' => "--snmp-privacy\n" .
+                  "   Encrypt session, using same password as auth-password: SNMP 3 only",
+        'required' => 0,
+        'default'  => 0
     );
 
     $self->add_arg(
@@ -696,6 +705,7 @@ this library make sense.  Rules:
 
  * If SNMP is version 1 or 2c, rocommunity must be set
  * If SNMP is version 3, auth-username and auth-password must be set
+ * If SNMP is version 3 and snmp-privacy is set, auth-password must be set
 
 =back
 
@@ -714,7 +724,7 @@ sub _snmp_validate_opts {
         for my $p (qw(auth-username auth-password auth-protocol)) {
             push(@errors, $p) if $opts->get($p) eq '';
         }
-
+        
         die "SNMP parameter validation failed.  Missing: " .
             join(', ', @errors) if scalar(@errors) > 0;
 
@@ -777,6 +787,11 @@ sub connect {
             push(@args, '-username' => $opts->get('auth-username'));
             push(@args, '-authpassword' => $opts->get('auth-password'));
             push(@args, '-authprotocol' => $opts->get('auth-protocol'));
+            # if --snmp-privacy is passed, use use the same password as auth
+            # will default to 'DES' for -privprotocol
+            if ($opts->get('snmp-privacy')) {
+                push(@args, '-privpassword' => $opts->get('auth-password'));
+            }
         } else {
             push(@args, '-community' => $opts->get('rocommunity'));
         }
