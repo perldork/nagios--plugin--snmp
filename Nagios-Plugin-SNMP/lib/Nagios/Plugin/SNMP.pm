@@ -25,6 +25,7 @@ Nagios::Plugin::SNMP - Helper module to make writing SNMP-based plugins for Nagi
  * --snmp-timeout: Connect timeout in seconds [default 0]
  * --snmp-debug: Turn on Net::SNMP debugging
  * --snmp-max-msg-size N: Set maximum SNMP message size in bytes
+ * --snmp-max-repetitions N: Set the max repetitions setting for bulk requests
  * --rocommunity: Read-only community string for SNMP 1/v2c
  * --auth-username: Auth username for SNMP v3
  * --auth-password: Auth password for SNMP v3
@@ -165,7 +166,7 @@ use constant DEPENDENT  => 4;
 
 our @EXPORT = qw(OK WARNING CRITICAL UNKNOWN DEPENDENT);
 
-our $VERSION = '1.2';
+our $VERSION = '1.3';
 
 our $SNMP_USAGE = <<EOF;
        --hostname|-H HOST --port|-p INT --snmp-version 1|2c|3 \\
@@ -174,6 +175,7 @@ our $SNMP_USAGE = <<EOF;
        [--warning|-w STRING] [--critical|-c STRING] \\
        [--snmp-debug] \\
        [--snmp-max-msg-size N] \\
+       [--snmp-max-repetitions N] \\
        [--alt-host HOST_1 ... --alt-host HOST_N] \\
        { 
            [--rocommunity S] | \\
@@ -399,6 +401,14 @@ EOF
         'help' => "--snmp-max-msg-size BYTES\n" .
                   "   Specify SNMP maximum messages size [default 1470]",
         'default' => '1470'
+    );
+
+    $self->add_arg(
+        'spec' => 'snmp-max-repetitions=i',
+        'help' => "--snmp-max-repetitions VALUE\n" .
+                  "   Specify SNMP maximum repetitions value for bulk requests [optional]",
+        'required' => 0,
+        'default' => 0
     );
 
 }
@@ -922,11 +932,16 @@ SNMP_GET_AGENT:
 
 =head3 walk(@baseoids) - Perform an SNMP walk request
 
- Performs an SNMP walk on each passed in OID; uses the Net-SNMP
- get_table() method for each base OID to ensure that the method will
- work regardless of SNMP version in use.  Returns results as
- a hash reference where keys are the passed in base OIDs and the values are
- references to the results of the Net::SNMP get_table calls.
+Performs an SNMP walk on each passed in OID; uses the Net-SNMP
+get_table() method for each base OID to ensure that the method will
+work regardless of SNMP version in use.  Returns results as
+a hash reference where keys are the passed in base OIDs and the values are
+references to the results of the Net::SNMP get_table calls.
+
+If you consistently get plugin timeouts when performing an SNMP walk and
+increasing the timeouts do not solve the problem, it may be an issue
+with how the data is being returned by get_table().  Try setting the
+SNMP max repetitions option to 1 to see if the timeouts go away.
 
 =cut
 
@@ -962,7 +977,12 @@ GET_TABLE:
             #  enough to look for the string constants that represent a
             #  missing OID condition - noSuchObject or noSuchInstance
 
-            my $result = $s->get_table($baseoid);
+            my @args;
+            push(@args, '-baseoid' => $baseoid);
+            push(@args, '-maxrepetitions' => $self->opts->get('snmp-max-repetitions'))
+                if ($self->opts->get('snmp-max-repetitions') > 0);
+
+            my $result = $s->get_table(@args);
 
             if (! defined $result) {
 
